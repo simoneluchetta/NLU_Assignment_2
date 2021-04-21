@@ -3,11 +3,15 @@ import spacy
 import nltk
 import pandas as pd
 
+from remapping import remapping
+from spacy.tokens import Doc
+
+# nlp = spacy.load("en_core_web_sm")
 nlp = spacy.load("en_core_web_sm")
 doc = conll.read_corpus_conll("data/train.txt", " ")[:100]
 
 refs = [[(text, iob) for text, pos, syntactic_chunk, iob in sent]
-          for sent in doc]
+        for sent in doc]
 
 sentenceList = []
 
@@ -23,31 +27,17 @@ docNLP = []
 for sent in sentenceList:
     inputText = ' '.join(sent)
     docTextList.append(inputText)
-    dummyDoc = nlp(inputText)
-    entityType = [(t.text, t.ent_iob_, t.ent_type_) for t in dummyDoc]
+    doc = Doc(nlp.vocab, words=sent)
+    for name, proc in nlp.pipeline:
+        doc = proc(doc)
+    entityType = [(t.text, t.ent_iob_, t.ent_type_) for t in doc]
     docNLP.append(entityType)
 
-# for sent in sentenceList:
-#     inputText = ' '.join(sent)
-#     docTextList.append(inputText)
-#     dummyDoc = nlp(inputText)
-#     entityType = [(t.text, t.ent_iob_ + ("-" if len(t.ent_type_) > 0 else "") + t.ent_type_) for t in dummyDoc]
-#     docNLP.append(entityType)
+docNLPRemappedList = remapping(docNLP)
 
-docNLPRemappedList = []
+results = conll.evaluate(refs, docNLPRemappedList)
 
-def remapping(processedNLP):
-    for docs in processedNLP:
-        docNLPRemapped = []
-        for item in docs:
-            # compare items
-            if (str(item[2]) == "PERSON"):
-                docNLPRemapped.append((item[0], item[1] + "-PER"))
-            elif (str(item[2]) == "ORG"):
-                # MISC, LOC
-                docNLPRemapped.append((item[0], item[1] + "-ORG"))
-            else: 
-                docNLPRemapped.append((item[0], item[1]))
-        docNLPRemappedList.append(docNLPRemapped)
+pd_tbl = pd.DataFrame().from_dict(results, orient='index')
+pd_tbl.round(decimals=3)
+print(pd_tbl)
 
-remapping(docNLP)
