@@ -80,3 +80,8 @@ def remapping(processedNLP):
         docNLPRemappedList.append(docNLPRemapped)
     
     return docNLPRemappedList
+
+# If we want to see the chunks types, we have:
+
+# chunks = []
+# chunks.append(conll.get_chunks("data/train.txt", fs=" ", otag="O"))
