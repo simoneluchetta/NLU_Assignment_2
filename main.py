@@ -60,6 +60,11 @@ print("Accuracy: " + str(accuracy))
 
 ############################################################################
 
+# input_text = "Apple's Steve Jobs died in 2011 in Palo Alto, California."
+
+# docEx = nlp(input_text)
+
+result = []
 
 for sent in docList:
 
@@ -102,5 +107,34 @@ for sent in docList:
             i += 1
 
     result.append(output)
+
+############################################################################
+
+frequencyAnalysis = [x for x in result if (len(x) > 0)]
+
+dictionary = {}
+
+def get_key(matching, my_dict):
+    for key, value in my_dict.items():
+         if key == matching:
+             return True
+ 
+    return False
+
+for sents in frequencyAnalysis:
+    for elems in sents:
+        e = []
+        for i in range(len(elems)):
+            e.append(str(elems[i][1]))
+        if(get_key(str(e), dictionary)):
+            # add the key's matching number in the dictionary
+            dictionary[str(e)] += 1
+        else:
+            # create a new entry in the dictionary
+            dictionary[str(e)] = 1
+
+print(dictionary)
+
+print("End of frequency analysis...")
 
 ############################################################################
