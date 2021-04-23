@@ -54,18 +54,53 @@ for i in range(len(refs)):
         total += 1
         if (refs[i][j] == docNLPRemappedList[i][j]):
             plusCounts += 1
-    
+
 accuracy = plusCounts/total
 print("Accuracy: " + str(accuracy))
 
 ############################################################################
 
-docNER = []
 
 for sent in docList:
-    entityType = sent.ents
-    docNER.append(entityType)
+
+    chunkType = list(sent.noun_chunks)
+
+    entities = []
+
+    for ents in chunkType:
+        variousChunks = []
+        for nc in ents.ents:
+            variousChunks.append(nc)
+        entities.append(variousChunks)
+
+    separatedChunks = []
+
+    for element in entities:
+        l = []
+        for counts in element:
+            count = (counts.lemma_, counts.label_)
+            l.append(count)
+        separatedChunks.append(l)
+
+    entityType = [(ent.text, ent.label_) for ent in sent.ents]
+
+    output = []
+    separatedChunks = [x for x in separatedChunks if (len(x) > 0)]
+
+    i = 0
+    k = 0
+    while(i < len(entityType)):
+        if(k < len(separatedChunks) and entityType[i] == separatedChunks[k][0]):
+            l = []
+            for chunk in separatedChunks[k]:
+                l.append(chunk)
+                i += 1
+            output.append(l)
+            k += 1
+        else:
+            output.append([entityType[i]])
+            i += 1
+
+    result.append(output)
 
 ############################################################################
-
-
