@@ -1,3 +1,5 @@
+# Function to remap items from spaCy to conll format, in order to compare them
+
 def remapping(processedNLP):
     docNLPRemappedList = []
     for docs in processedNLP:
