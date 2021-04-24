@@ -6,6 +6,7 @@ import nltk
 import pandas as pd
 
 from remapping import remapping
+from getKey import get_key
 from spacy.tokens import Doc
 
 nlp = spacy.load("en_core_web_sm")
@@ -49,14 +50,37 @@ print(pd_tbl)
 plusCounts = 0
 total = 0
 
+accuracyDict = {}
+referenceDict = {}
+
 for i in range(len(refs)):
     for j in range(len(refs[i])):
         total += 1
-        if (refs[i][j] == docNLPRemappedList[i][j]):
+        if (refs[i][j][1] == docNLPRemappedList[i][j][1]):
+            if(get_key(docNLPRemappedList[i][j][1], accuracyDict)):
+            # add the key's matching number in the dictionary
+                accuracyDict[docNLPRemappedList[i][j][1]] += 1
+            else:
+            # create a new entry in the dictionary
+                accuracyDict[docNLPRemappedList[i][j][1]] = 1
             plusCounts += 1
+        if(get_key(refs[i][j][1], referenceDict)):
+            # add the key's matching number in the dictionary
+                referenceDict[refs[i][j][1]] += 1
+        else:
+            # create a new entry in the dictionary
+            referenceDict[refs[i][j][1]] = 1
+        
+print("Accuracies for each IOB type:")
+for keys in referenceDict:
+    try:
+        print("{}: {}".format(keys, accuracyDict[keys]/referenceDict[keys]))
+    except:
+        print("No matches for {}".format(keys))
+        pass
 
 accuracy = plusCounts/total
-print("Accuracy: " + str(accuracy))
+print("Total accuracy: " + str(accuracy))
 
 ############################################################################
 
@@ -113,13 +137,6 @@ for sent in docList:
 frequencyAnalysis = [x for x in result if (len(x) > 0)]
 
 dictionary = {}
-
-def get_key(matching, my_dict):
-    for key, value in my_dict.items():
-         if key == matching:
-             return True
- 
-    return False
 
 for sents in frequencyAnalysis:
     for elems in sents:
