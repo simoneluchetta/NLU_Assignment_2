@@ -4,83 +4,102 @@ import conll
 import spacy
 import nltk
 import pandas as pd
+# import pprint
 
 from remapping import remapping
 from getKey import get_key
 from spacy.tokens import Doc
 
 nlp = spacy.load("en_core_web_sm")
-doc = conll.read_corpus_conll("data/train.txt", " ")[:100]
+doc = conll.read_corpus_conll("data/train.txt", " ")#[:100]
 
 refs = [[(text, iob) for text, pos, syntactic_chunk, iob in sent]
         for sent in doc]
 
-sentenceList = []
+def getSentences(reference):
+    sentenceList = []
 
-for sent in refs:
-    sentence = []
-    for i in range(len(sent)):
-        sentence.append(sent[i][0])
-    sentenceList.append(sentence)
+    for sent in reference:
+        sentence = []
+        for i in range(len(sent)):
+            sentence.append(sent[i][0])
+        sentenceList.append(sentence)
+    return sentenceList
 
-docTextList = []
-docNLP = []
-docList = []
+def task_1_2(reference):
 
-for sent in sentenceList:
-    inputText = ' '.join(sent)
-    docTextList.append(inputText)
-    doc = Doc(nlp.vocab, words=sent)
-    for name, proc in nlp.pipeline:
-        doc = proc(doc)
-    docList.append(doc)
-    entityType = [(t.text, t.ent_iob_, t.ent_type_) for t in doc]
-    docNLP.append(entityType)
+    sentenceList = getSentences(reference)
 
-docNLPRemappedList = remapping(docNLP)
+    docTextList = []
+    docNLP = []
+    docList = []
 
-results = conll.evaluate(refs, docNLPRemappedList)
+    for sent in sentenceList:
+        inputText = ' '.join(sent)
+        docTextList.append(inputText) # Optionally one could decide to store here the sentences, maybe for future use
+        doc = Doc(nlp.vocab, words=sent)
+        for name, proc in nlp.pipeline: # Here we obtain spaCy doc objects, with a different flavour with respect to the usual modality
+            doc = proc(doc)
+        docList.append(doc)
+        entityType = [(t.text, t.ent_iob_, t.ent_type_) for t in doc]
+        docNLP.append(entityType)
 
-pd_tbl = pd.DataFrame().from_dict(results, orient='index')
-pd_tbl.round(decimals=3)
-print(pd_tbl)
+    docNLPRemappedList = remapping(docNLP) # Everything is remapped from spaCy format to CoNLL IOB format
+
+    results = conll.evaluate(reference, docNLPRemappedList)
+
+    pd_tbl = pd.DataFrame().from_dict(results, orient='index')
+    pd_tbl.round(decimals=3)
+    print(pd_tbl)
+
+    return docList, docNLPRemappedList # Choose what to return
+
+print("Task 1.2:")
+docList, docNLPRemappedList = task_1_2(refs)
+print("")
 
 ############################################################################
 
-plusCounts = 0
-total = 0
+def task_1_1(reference, docR):
 
-accuracyDict = {}
-referenceDict = {}
+    plusCounts = 0
+    total = 0
 
-for i in range(len(refs)):
-    for j in range(len(refs[i])):
-        total += 1
-        if (refs[i][j][1] == docNLPRemappedList[i][j][1]):
-            if(get_key(docNLPRemappedList[i][j][1], accuracyDict)):
-            # add the key's matching number in the dictionary
-                accuracyDict[docNLPRemappedList[i][j][1]] += 1
+    accuracyDict = {}
+    referenceDict = {}
+
+    for i in range(len(refs)):
+        for j in range(len(refs[i])):
+            total += 1
+            if (refs[i][j][1] == docNLPRemappedList[i][j][1]):
+                if(get_key(docNLPRemappedList[i][j][1], accuracyDict)):
+                # add the key's matching number in the dictionary
+                    accuracyDict[docNLPRemappedList[i][j][1]] += 1
+                else:
+                # create a new entry in the dictionary
+                    accuracyDict[docNLPRemappedList[i][j][1]] = 1
+                plusCounts += 1
+            if(get_key(refs[i][j][1], referenceDict)):
+                # add the key's matching number in the dictionary
+                    referenceDict[refs[i][j][1]] += 1
             else:
-            # create a new entry in the dictionary
-                accuracyDict[docNLPRemappedList[i][j][1]] = 1
-            plusCounts += 1
-        if(get_key(refs[i][j][1], referenceDict)):
-            # add the key's matching number in the dictionary
-                referenceDict[refs[i][j][1]] += 1
-        else:
-            # create a new entry in the dictionary
-            referenceDict[refs[i][j][1]] = 1
-        
-print("Accuracies for each IOB type:")
-for keys in referenceDict:
-    try:
-        print("{}: {}".format(keys, accuracyDict[keys]/referenceDict[keys]))
-    except:
-        print("No matches for {}".format(keys))
-        pass
+                # create a new entry in the dictionary
+                referenceDict[refs[i][j][1]] = 1
+            
+    print("Accuracies for each IOB type:")
+    for keys in referenceDict:
+        try:
+            print("{}: {:.2f}".format(keys, accuracyDict[keys]/referenceDict[keys]))
+        except:
+            print("No matches for {}".format(keys))
+            pass
 
-accuracy = plusCounts/total
-print("Total accuracy: " + str(accuracy))
+    accuracy = plusCounts/total
+    print("Total accuracy: " + str(accuracy))
+
+print("Task 1.1:")
+task_1_1(refs, docNLPRemappedList)
+print("")
 
 ############################################################################
 
@@ -88,70 +107,124 @@ print("Total accuracy: " + str(accuracy))
 
 # docEx = nlp(input_text)
 
-result = []
+def task_2_1(docL):
 
-for sent in docList:
+    result = []
 
-    chunkType = list(sent.noun_chunks)
+    for sent in docList: 
 
-    entities = []
+        chunkType = list(sent.noun_chunks)
 
-    for ents in chunkType:
-        variousChunks = []
-        for nc in ents.ents:
-            variousChunks.append(nc)
-        entities.append(variousChunks)
+        entities = []
 
-    separatedChunks = []
+        for ents in chunkType:
+            variousChunks = []
+            for nc in ents.ents:
+                variousChunks.append(nc)
+            entities.append(variousChunks)
 
-    for element in entities:
-        l = []
-        for counts in element:
-            count = (counts.lemma_, counts.label_)
-            l.append(count)
-        separatedChunks.append(l)
+        separatedChunks = []
 
-    entityType = [(ent.text, ent.label_) for ent in sent.ents]
-
-    output = []
-    separatedChunks = [x for x in separatedChunks if (len(x) > 0)]
-
-    i = 0
-    k = 0
-    while(i < len(entityType)):
-        if(k < len(separatedChunks) and entityType[i] == separatedChunks[k][0]):
+        for element in entities:
             l = []
-            for chunk in separatedChunks[k]:
-                l.append(chunk)
-                i += 1
-            output.append(l)
-            k += 1
-        else:
-            output.append([entityType[i]])
-            i += 1
+            for counts in element:
+                count = (counts.lemma_, counts.label_)
+                l.append(count)
+            separatedChunks.append(l)
 
-    result.append(output)
+        entityType = [(ent.text, ent.label_) for ent in sent.ents]
+
+        output = []
+        separatedChunks = [x for x in separatedChunks if (len(x) > 0)]
+
+        # Control logic
+
+        i = 0
+        k = 0
+        while(i < len(entityType)):
+            if(k < len(separatedChunks) and entityType[i] == separatedChunks[k][0]):
+                l = []
+                for chunk in separatedChunks[k]:
+                    l.append(chunk)
+                    i += 1
+                output.append(l)
+                k += 1
+            else:
+                output.append([entityType[i]])
+                i += 1
+
+        result.append(output)
+    return result
+
+# It is possible to insert [docEx] instead of docList, if one wants
+print("Task 2.1:")
+result = task_2_1(docList)
+print("All items are now stored in 'result' data structure...\n")
 
 ############################################################################
 
-frequencyAnalysis = [x for x in result if (len(x) > 0)]
+def task_2_2(previousResult):
 
-dictionary = {}
+    frequencyAnalysis = [x for x in result if (len(x) > 0)]
 
-for sents in frequencyAnalysis:
-    for elems in sents:
-        e = []
-        for i in range(len(elems)):
-            e.append(str(elems[i][1]))
-        if(get_key(str(e), dictionary)):
-            # add the key's matching number in the dictionary
-            dictionary[str(e)] += 1
-        else:
-            # create a new entry in the dictionary
-            dictionary[str(e)] = 1
+    dictionary = {}
 
-print(dictionary)
+    for sents in frequencyAnalysis:
+        for elems in sents:
+            e = []
+            for i in range(len(elems)):
+                e.append(str(elems[i][1]))
+            if(get_key(str(e), dictionary)):
+                # add the key's matching number in the dictionary
+                dictionary[str(e)] += 1
+            else:
+                # create a new entry in the dictionary
+                dictionary[str(e)] = 1
 
+    # If one wants to sort the dictionary and then use the pretty print:
+    # resultDict = sorted(dictionary.items(), key=lambda x: x[1], reverse=True)
+    # pprint.pprint(resultDict)
+
+    # If one wants to print the dictionary as it is:
+    for keys in dictionary:
+        print("{}:{}".format(keys, dictionary[keys]))
+
+print("Task 2.2:")
+task_2_2(result)
 print("End of frequency analysis...")
+
+############################################################################
+
+def task_3_1(texts):
+    expansion = []
+    for sent in texts: # Since this function is designed to work with other lists of sentences, I decided to process the sentences here.
+        plainString = ""
+        for ele in sent: 
+            plainString += str(ele + " ")
+        doc = nlp(plainString)
+
+        toModify = [[token.text, token.ent_iob_, token.ent_type_] for token in doc]
+
+        for token in doc:
+            if(token.dep_ == "compound" and token.head.ent_type_ != ""):
+                toModify[token.i][2] = token.head.ent_type_
+                if(token.head.i < token.i): # In which side of the sentence am I? Take a look and then...
+                    toModify[token.i][1] = "B"
+                elif(toModify[token.head.i][1] == "B"):
+                    toModify[token.head.i][1] = "I"
+                    toModify[token.i][1] = "B"
+                elif(toModify[token.i-1][2] == toModify[token.i][2]): # Corrects for B-B-I or stuffs like that
+                    toModify[token.i][1] = "I"
+                else:
+                    toModify[token.i][1] = "B"
+
+        expansion.append(toModify)
+    return expansion
+
+print("Task 3:")
+# task_3(docList)
+sentenceList = getSentences(refs)
+segmentationCorrection = task_3_1(sentenceList)
+print("End of program")
 
 ############################################################################
