@@ -29,7 +29,7 @@ def remapping(processedNLP):
             elif (str(item[2]) == "FAC"):
                 docNLPRemapped.append((item[0], item[1] + "-ORG"))
 
-            # There are 21 spaCy to "MISC" conversions to carry:
+            # There are 19 spaCy to "MISC" conversions to carry:
 
             elif (str(item[2]) == "NORP"):  # 1
                 docNLPRemapped.append((item[0], item[1] + "-MISC"))
@@ -69,10 +69,13 @@ def remapping(processedNLP):
                 docNLPRemapped.append((item[0], item[1] + "-MISC"))
             elif (str(item[2]) == "DRV"):  # 19
                 docNLPRemapped.append((item[0], item[1] + "-MISC"))
+            
+            # Other transforms:
+
             elif (str(item[2]) == "GPE_LOC"):  # 20
-                docNLPRemapped.append((item[0], item[1] + "-MISC"))
+                docNLPRemapped.append((item[0], item[1] + "-LOC")) ## These could have been MISC, but since the term "LOC" is present in the text, I decided to leave it as it is
             elif (str(item[2]) == "GPE_ORG"):  # 21
-                docNLPRemapped.append((item[0], item[1] + "-MISC"))
+                docNLPRemapped.append((item[0], item[1] + "-GPE")) ## Same reason of above, but with "GPE"
 
             # And for those I may have missed... Just ignore the third Item and keep the IOB tag
             # I could have put the "MISC" conversions in the final else, but I wasn't extremely sure I included all the item-tags I needed.
