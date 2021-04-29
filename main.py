@@ -270,8 +270,9 @@ def task3_option_3(texts):
             idx = 0
             try:
                 while(childList[idx][0].dep_ == "compound"):
+                    elem = trail(childList[idx][0])
+                    toModify [elem.i][1] = "I"
                     toModify [childList[idx][0].i][1] = "B"
-                    toModify [childList[idx][0].i+1][1] = "I"
                     toModify [childList[idx][0].i][2] = toModify [item.i+1][2]
                     idx += 1
             except:

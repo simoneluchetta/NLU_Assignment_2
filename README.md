@@ -71,6 +71,7 @@ refs = [[(text, iob) for text, pos, syntactic_chunk, iob in sent]
 ```
 
 Basically, ```refs``` stores the text and the IOB tag of each sentence of the CoNLL 2003 corpus. The textual part will form a sentence that will then be passed into the ```task_1_2``` function, which will process the sentences using spaCy. Since spaCy and CoNLL have some different IOB tag annotation, another function called ```remapping``` will be used so that it will be possible to do further comparisons about the data. So, in the end, the function ```task_1_2``` returns both a list of documents objects processed by spaCy and a list of remapped documents.
+Keep in mind that for I swapped the order of these first two two tasks because I then reused some of the computations in the ```task_1_2_``` for the ```task_1_1```
 
 On top of that, this way is possible to use the ```conll.py``` evaluation function:
 
@@ -348,3 +349,17 @@ For example, this is the result that we get if we feed the text: ```"Apple 's St
 ```
 
 The same reasoning is applied to all the sentences in the CoNLL ```train.txt``` file.
+One thing to mention is that spaCy finds compound relationships in a very strange way. For example, take a look at the sentence: `"We do n't support any such recommendation because we do n't see any grounds for it , " the Commission 's chief spokesman Nikolaus van der Pas told a news briefing .`
+
+Before the sentence is processed, one might think that ```Nikolaus``` will have a ```.dep_``` equal to ```compound```. The ```.head``` relation will go to the token ```van``` which will behave slightly the same until arriving to the last token of the compound, it being ```Pas```.
+However, things behave different from what we expect: when we arrive to the token ```der```, we don't have a ```compound``` relation anymore, and its head is not ```Pas```. Which makes me think that ```compound``` relationships are not so effective afterall.
+Yet, it might be that some relations are fixed using these algorithms. For example, we indeed have:
+
+```
+['Nikolaus', 'B', 'PERSON']
+['van', 'I', 'PERSON']
+['der', 'I', 'PERSON']
+['Pas', 'I', 'PERSON']
+```
+
+As one should expect.
