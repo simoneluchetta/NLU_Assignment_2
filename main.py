@@ -1,4 +1,5 @@
-# Simone Luchetta
+# Simone Luchetta, Student ID: 223716
+# Second assignment
 
 import conll
 import spacy
@@ -11,7 +12,6 @@ from getKey import get_key
 from spacy.tokens import Doc
 
 nlp = spacy.load("en_core_web_sm")
-doc = conll.read_corpus_conll("data/train.txt", " ")#[:100]
 
 refs = [[(text, iob) for text, pos, syntactic_chunk, iob in sent]
         for sent in doc]
@@ -195,7 +195,14 @@ print("End of frequency analysis...")
 
 ############################################################################
 
-def task_3_1(texts):
+def trail(token):
+
+    if(token.head.dep_ == "compound"):
+        return trail(token.head)
+    else:
+        return token
+
+def task_3_option_1(texts):
     expansion = []
     for sent in texts: # Since this function is designed to work with other lists of sentences, I decided to process the sentences here.
         plainString = ""
@@ -221,10 +228,82 @@ def task_3_1(texts):
         expansion.append(toModify)
     return expansion
 
+def task_3_option_2(texts):
+    expansion = []
+    doc = nlp(texts)
+
+    toModify = [[token.text, token.ent_iob_, token.ent_type_] for token in doc]
+
+    for token in doc:
+        if(token.dep_ == "compound" and token.head.ent_type_ != ""):
+            toModify[token.i][2] = token.head.ent_type_
+            if(token.head.i < token.i): # In which side of the sentence am I? Take a look and then...
+                toModify[token.i][1] = "B"
+            elif(toModify[token.head.i][1] == "B"):
+                toModify[token.head.i][1] = "I"
+                toModify[token.i][1] = "B"
+            elif(toModify[token.i-1][2] == toModify[token.i][2]): # Corrects for B-B-I or stuffs like that
+                toModify[token.i][1] = "I"
+            else:
+                toModify[token.i][1] = "B"
+
+    expansion.append(toModify)
+    return expansion
+
+def task3_option_3(texts):
+    expansion = []
+    for sent in texts: 
+        plainString = ""
+        for ele in sent: 
+            plainString += str(ele + " ")
+        doc = nlp(plainString)
+    
+        toModify = [[token.text, token.ent_iob_, token.ent_type_] for token in doc]
+
+        childList = []
+
+        for token in doc:
+            for childrens in list(token.children):
+                childList.append([childrens, token])
+            childList = sorted(childList)
+
+            idx = 0
+            try:
+                while(childList[idx][0].dep_ == "compound"):
+                    toModify [childList[idx][0].i][1] = "B"
+                    toModify [childList[idx][0].i+1][1] = "I"
+                    toModify [childList[idx][0].i][2] = toModify [item.i+1][2]
+                    idx += 1
+            except:
+                pass
+            
+            if(token.dep_ == "compound" and token.head.ent_type_ != ""):
+                toModify[token.i][2] = token.head.ent_type_
+                if(token.head.i < token.i): # In which side of the sentence am I? Take a look and then...
+                    toModify[token.i][1] = "B"
+                elif(toModify[token.head.i][1] == "B"):
+                    toModify[token.head.i][1] = "I"
+                    toModify[token.i][1] = "B"
+                elif(toModify[token.i-1][2] == toModify[token.i][2]): # Corrects for B-B-I or stuffs like that
+                    toModify[token.i][1] = "I"
+                else:
+                    toModify[token.i][1] = "B"
+
+        expansion.append(toModify)
+    return expansion
+
+# On train.txt files:
 print("Task 3:")
-# task_3(docList)
 sentenceList = getSentences(refs)
-segmentationCorrection = task_3_1(sentenceList)
+# segmentationCorrection = task_3_option_1(sentenceList)
+
+# On the sentence about Steve Jobs:
+# string = "Apple 's Steve Jobs died in 2011 in Palo Alto , California ."
+# segmentationCorrection = task_3_option_2(string)
+
+# Other option using token.children and compounds
+segmentationCorrection = task3_option_3(sentenceList)
+print("All sentences are processed and stored in segmentationCorrection data structure...")
 print("End of program")
 
 ############################################################################
