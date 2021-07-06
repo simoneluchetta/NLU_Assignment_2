@@ -13,6 +13,8 @@ from spacy.tokens import Doc
 
 nlp = spacy.load("en_core_web_sm")
 
+doc = conll.read_corpus_conll("data/train.txt", " ")[:100]
+
 refs = [[(text, iob) for text, pos, syntactic_chunk, iob in sent]
         for sent in doc]
 
@@ -273,7 +275,7 @@ def task3_option_3(texts):
                     elem = trail(childList[idx][0])
                     toModify [elem.i][1] = "I"
                     toModify [childList[idx][0].i][1] = "B"
-                    toModify [childList[idx][0].i][2] = toModify [item.i+1][2]
+                    toModify [childList[idx][0].i][2] = toModify [token.i+1][2] #item
                     idx += 1
             except:
                 pass
